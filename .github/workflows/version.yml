@@ -1,0 +1,90 @@
+name: Version Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config --global user.email "rakesh.c@wedaa.tech"
+          git config --global user.name "raxkumar-wedaa"
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Latest tag: $tag"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+      - name: Extract source branch from merge commit
+        id: extract_branch
+        run: |
+          msg=$(git log -1 --pretty=%B)
+          echo "Merge message: $msg"
+
+          if [[ "$msg" =~ from\ ([^/]+\/)?([^[:space:]]+) ]]; then
+            branch="${BASH_REMATCH[2]}"
+          else
+            branch="main"
+          fi
+
+          echo "Detected branch: $branch"
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+
+      - name: Determine bump type from branch name
+        id: bump_type
+        run: |
+          branch="${{ steps.extract_branch.outputs.branch }}"
+          if [[ "$branch" =~ ^feat\/ ]]; then
+            echo "Bumping minor version"
+            echo "bump_type=minor" >> $GITHUB_OUTPUT
+          else
+            echo "Bumping patch version"
+            echo "bump_type=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          old_tag=${{ steps.get_tag.outputs.tag }}
+          old_version=${old_tag#v}
+          IFS='.' read -r major minor patch <<< "$old_version"
+
+          bump="${{ steps.bump_type.outputs.bump_type }}"
+
+          if [ "$bump" = "minor" ]; then
+            minor=$((minor + 1))
+            patch=0
+          else
+            patch=$((patch + 1))
+          fi
+
+          new_tag="v$major.$minor.$patch"
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+          echo "New version: $new_tag"
+
+      - name: Create Git Tag
+        run: |
+          git tag ${{ steps.bump_version.outputs.new_tag }}
+          git push origin ${{ steps.bump_version.outputs.new_tag }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.bump_version.outputs.new_tag }}
+          name: ${{ steps.bump_version.outputs.new_tag }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
