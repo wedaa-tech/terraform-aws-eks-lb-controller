@@ -13,8 +13,7 @@ A Terraform module to deploy AWS Load Balancer Controller on EKS clusters. The c
 | `region`                  | AWS region where the EKS cluster is deployed     | string | n/a      | ✅ Yes   |
 | `aws_lb_controller_version` | AWS Load Balancer Controller version           | string | `2.13.0` | ❌ No    |
 
-
-
+---
 ## Example Usage
 
 ```hcl
@@ -36,6 +35,7 @@ module "aws_lb_controller" {
 | `helm`     | Deploy Helm charts (AWS LB controller).            | `hashicorp/helm`    | `~> 2.6` |
 | `http`     | Download IAM policy JSON file dynamically.          | `hashicorp/http`    | `3.5.0` |
 
+---
 ## Semantic Pull Requests
 
 Pull Requests or Commits must follow conventional specs below:
@@ -48,6 +48,7 @@ Pull Requests or Commits must follow conventional specs below:
 - `style:` Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
 - `test:` Adding missing tests or correcting existing tests
 
+---
 ## License
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
